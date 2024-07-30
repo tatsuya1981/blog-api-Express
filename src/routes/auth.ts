@@ -1,19 +1,20 @@
-import express from "express";
+import express from 'express';
 
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import User from "../models/user";
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import User from '../models/user';
+import { Op } from 'sequelize';
 
 const router = express.Router();
 
-router.post("/signup", async (req, res) => {
+router.post('/signup', async (req, res) => {
   try {
     const { loginId, name, iconUrl, password } = req.body.user;
 
     // 既存ユーザーのチェック
     const existingUser = await User.findOne({ where: { loginId } });
     if (existingUser) {
-      return res.status(400).json({ error: "User already exists" });
+      return res.status(400).json({ error: 'ユーザーが既に存在します' });
     }
 
     // パスワードのハッシュ化
@@ -24,18 +25,15 @@ router.post("/signup", async (req, res) => {
       loginId,
       name,
       iconUrl,
-      authorize_token: "", // 後で更新
+      authorize_token: hashedPassword, // ハッシュ化されたパスワードを保存
     });
 
     // JWTトークンの生成
     const token = jwt.sign(
       { userId: user.id },
-      process.env.JWT_SECRET || "your-secret-key",
-      { expiresIn: "1d" }
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '1d' },
     );
-
-    // authorize_tokenの更新
-    await user.update({ authorize_token: token });
 
     res.status(201).json({
       user: {
@@ -48,7 +46,53 @@ router.post("/signup", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: 'サーバー内部エラー' });
+  }
+});
+
+router.post('/login', async (req, res) => {
+  try {
+    const { loginId, password } = req.body;
+
+    // ユーザーの検索
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [{ loginId: loginId }, { name: loginId }],
+      },
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: 'ユーザーの認証に失敗しました' });
+    }
+
+    // パスワードの検証
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.authorize_token,
+    );
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'パスワードの認証に失敗しました' });
+    }
+
+    // JWTトークンの生成
+    const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '1d' },
+    );
+
+    res.json({
+      user: {
+        id: user.id,
+        loginId: user.loginId,
+        name: user.name,
+        iconUrl: user.iconUrl,
+        authorize_token: token,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'サーバー内部エラー' });
   }
 });
 
