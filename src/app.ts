@@ -1,12 +1,22 @@
-import express, { Request, Response } from "express";
+import express from "express";
+import sequelize from "./config/database";
+import "reflect-metadata";
 
 const app = express();
 const port = 3000;
 
-app.get("/", (req: Request, res: Response) => {
+app.get("/", (req, res) => {
   res.json({ message: "ok" });
 });
 
-app.listen(port, () => {
-  console.log(`サーバーはhttp://localhost:${port}で起動中！`);
-});
+sequelize
+  .authenticate()
+  .then(() => {
+    console.log("データベースの接続に成功したよ！！");
+    app.listen(port, () => {
+      console.log(`サーバーはhttp://localhost:${port}で起動中！`);
+    });
+  })
+  .catch((error) => {
+    console.error("Unable to connect to the database:", error);
+  });
