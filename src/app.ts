@@ -1,9 +1,12 @@
 import express from "express";
 import sequelize from "./config/database";
-import "reflect-metadata";
+import authRoutes from "./routes/auth";
 
 const app = express();
 const port = 3000;
+
+app.use(express.json());
+app.use("/auth", authRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "ok" });
