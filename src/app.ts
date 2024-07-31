@@ -2,6 +2,7 @@ import express from 'express';
 import sequelize from './config/database';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
+import postsRoutes from './routes/posts';
 import cors from 'cors';
 
 const app = express();
@@ -11,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
+app.use('/posts', postsRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'ok' });

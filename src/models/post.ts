@@ -5,10 +5,13 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
-} from "sequelize-typescript";
-import User from "./user";
+  BelongsToMany,
+} from 'sequelize-typescript';
+import User from './user';
+import Category from './category';
+import PostCategory from './postCategory';
 
-@Table({ tableName: "posts" })
+@Table({ tableName: 'posts' })
 export default class Post extends Model {
   @Column({
     type: DataType.INTEGER,
@@ -46,15 +49,6 @@ export default class Post extends Model {
   })
   status!: number;
 
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-  })
-  createdAt!: Date;
-
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-  })
-  updatedAt!: Date;
+  @BelongsToMany(() => Category, () => PostCategory)
+  categories!: Category[];
 }
