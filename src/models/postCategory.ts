@@ -1,14 +1,8 @@
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  ForeignKey,
-} from "sequelize-typescript";
-import Post from "./post";
-import Category from "./category";
+import { Table, Column, Model, DataType, ForeignKey } from 'sequelize-typescript';
+import Post from './post';
+import Category from './category';
 
-@Table({ tableName: "post_categories" })
+@Table({ tableName: 'post_categories' })
 export default class PostCategory extends Model {
   @Column({
     type: DataType.INTEGER,
@@ -30,16 +24,4 @@ export default class PostCategory extends Model {
     allowNull: false,
   })
   categoryId!: number;
-
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-  })
-  createdAt!: Date;
-
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-  })
-  updatedAt!: Date;
 }

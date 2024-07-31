@@ -1,6 +1,8 @@
-import { Table, Column, Model, DataType } from "sequelize-typescript";
+import { Table, Column, Model, DataType, BelongsToMany } from 'sequelize-typescript';
+import Post from './post';
+import PostCategory from './postCategory';
 
-@Table({ tableName: "categories" })
+@Table({ tableName: 'categories' })
 export default class Category extends Model {
   @Column({
     type: DataType.INTEGER,
@@ -21,15 +23,6 @@ export default class Category extends Model {
   })
   name!: string;
 
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-  })
-  createdAt!: Date;
-
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-  })
-  updatedAt!: Date;
+  @BelongsToMany(() => Post, () => PostCategory)
+  posts!: Post[];
 }
