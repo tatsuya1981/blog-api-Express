@@ -62,7 +62,7 @@ router.post('/login', async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ error: 'ユーザーの認証に失敗しました' });
+      return res.status(401).json({ error: 'ユーザーの認証に失敗しました！' });
     }
 
     // パスワードの検証
@@ -71,7 +71,9 @@ router.post('/login', async (req, res) => {
       user.authorize_token,
     );
     if (!isPasswordValid) {
-      return res.status(401).json({ error: 'パスワードの認証に失敗しました' });
+      return res
+        .status(401)
+        .json({ error: 'パスワードの認証に失敗しました！' });
     }
 
     // JWTトークンの生成
