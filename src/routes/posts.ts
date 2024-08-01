@@ -55,4 +55,41 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const post = await Post.findByPk(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ error: '探している記事は無さそうだよ！' });
+    }
+    if (post.userId !== req.user?.id) {
+      return res.status(403).json({ error: '操作する権限がないよ！！' });
+    }
+    const { title, body, status, categoryIds } = req.body.post;
+    await post.update({ title, body, status });
+    if (categoryIds) {
+      await post.$set('categories', categoryIds);
+    }
+    res.json({ post });
+  } catch (error) {
+    res.status(500).json({ error: '記事の更新に失敗・・・' });
+  }
+});
+
+router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const post = await Post.findByPk(req.params.id);
+    if (!post) {
+      return res.status(404).json({ error: '記事が見つからないよ！' });
+    }
+    if (post.userId !== req.user?.id) {
+      return res.status(403).json({ error: '操作する権限がないよ！！' });
+    }
+    await post.destroy();
+    res.status(200).send(`記事が正常に削除されました！  ※※ 削除された記事ＩＤ：${post.id} ※※`);
+  } catch (error) {
+    res.status(500).json({ error: '記事の削除に失敗・・・' });
+  }
+});
+
 export default router;
