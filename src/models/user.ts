@@ -1,6 +1,6 @@
-import { Table, Column, Model, DataType } from "sequelize-typescript";
+import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-@Table({ tableName: "users" })
+@Table({ tableName: 'users' })
 export default class User extends Model {
   @Column({
     type: DataType.INTEGER,
@@ -31,16 +31,4 @@ export default class User extends Model {
     allowNull: false,
   })
   iconUrl!: string;
-
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-  })
-  createdAt!: Date;
-
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-  })
-  updatedAt!: Date;
 }
