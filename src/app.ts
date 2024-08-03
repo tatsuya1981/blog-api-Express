@@ -18,14 +18,18 @@ app.get('/', (req, res) => {
   res.json({ message: 'ok' });
 });
 
-sequelize
-  .authenticate()
-  .then(() => {
+const listenDB = async () => {
+  try {
+    await sequelize.authenticate();
     console.log('データベースの接続に成功したよ！！');
     app.listen(port, () => {
       console.log(`サーバーはhttp://localhost:${port}で起動中！`);
     });
-  })
-  .catch((error) => {
-    console.error('Unable to connect to the database:', error);
-  });
+  } catch {
+    (error: unknown) => {
+      console.error('Unable to connect to the database:', error);
+    };
+  }
+};
+
+listenDB();
