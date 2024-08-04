@@ -1,12 +1,4 @@
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  ForeignKey,
-  BelongsTo,
-  BelongsToMany,
-} from 'sequelize-typescript';
+import { Table, Column, Model, DataType, ForeignKey, BelongsTo, BelongsToMany } from 'sequelize-typescript';
 import User from './user';
 import Category from './category';
 import PostCategory from './postCategory';
@@ -18,37 +10,52 @@ export default class Post extends Model {
     primaryKey: true,
     autoIncrement: true,
   })
-  id!: number;
+  declare id: number;
 
   @ForeignKey(() => User)
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
+    validate: {
+      notEmpty: true,
+      isInt: true,
+      min: 1,
+    },
   })
-  userId!: number;
+  declare userId: number;
 
   @BelongsTo(() => User)
-  user!: User;
+  declare user: User;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    validate: {
+      notEmpty: true,
+      len: [1, 255],
+    },
   })
-  title!: string;
+  declare title: string;
 
   @Column({
     type: DataType.TEXT,
     allowNull: false,
+    validate: {
+      notEmpty: true,
+    },
   })
-  body!: string;
+  declare body: string;
 
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
     defaultValue: 0,
+    validate: {
+      notEmpty: true,
+    },
   })
-  status!: number;
+  declare status: number;
 
   @BelongsToMany(() => Category, () => PostCategory)
-  categories!: Category[];
+  declare categories: Category[];
 }

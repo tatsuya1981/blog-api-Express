@@ -29,11 +29,7 @@ router.post('/signup', async (req, res) => {
     });
 
     // JWTトークンの生成
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '1d' },
-    );
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1d' });
 
     res.status(201).json({
       user: {
@@ -66,22 +62,13 @@ router.post('/login', async (req, res) => {
     }
 
     // パスワードの検証
-    const isPasswordValid = await bcrypt.compare(
-      password,
-      user.authorize_token,
-    );
+    const isPasswordValid = await bcrypt.compare(password, user.authorize_token);
     if (!isPasswordValid) {
-      return res
-        .status(401)
-        .json({ error: 'パスワードの認証に失敗しました！' });
+      return res.status(401).json({ error: 'パスワードの認証に失敗しました！' });
     }
 
     // JWTトークンの生成
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '1d' },
-    );
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1d' });
 
     res.json({
       user: {

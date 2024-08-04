@@ -1,34 +1,51 @@
+import { InferAttributes, InferCreationAttributes } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 @Table({ tableName: 'users' })
-export default class User extends Model {
+export default class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   @Column({
     type: DataType.INTEGER,
     primaryKey: true,
     autoIncrement: true,
   })
-  id!: number;
+  declare id?: number;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    validate: {
+      notEmpty: true,
+      isEmail: true,
+      len: [1, 255],
+    },
   })
-  loginId!: string;
+  declare loginId: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    validate: {
+      notEmpty: true,
+      isAlphanumeric: true,
+      len: [1, 255],
+    },
   })
-  authorize_token!: string;
+  declare authorize_token: string;
 
   @Column({
     type: DataType.STRING,
+    validate: {
+      len: [1, 255],
+    },
   })
-  name?: string;
+  declare name?: string;
 
   @Column({
     type: DataType.TEXT,
     allowNull: false,
+    validate: {
+      notEmpty: true,
+    },
   })
-  iconUrl!: string;
+  declare iconUrl: string;
 }
