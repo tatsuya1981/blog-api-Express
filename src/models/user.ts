@@ -26,7 +26,6 @@ export default class User extends Model<InferAttributes<User>, InferCreationAttr
     allowNull: false,
     validate: {
       notEmpty: true,
-      isAlphanumeric: true,
       len: [1, 255],
     },
   })
@@ -45,6 +44,7 @@ export default class User extends Model<InferAttributes<User>, InferCreationAttr
     allowNull: false,
     validate: {
       notEmpty: true,
+      isUrl: true,
     },
   })
   declare iconUrl: string;
