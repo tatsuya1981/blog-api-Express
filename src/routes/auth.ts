@@ -1,13 +1,20 @@
 import express from 'express';
-
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/user';
 import { Op } from 'sequelize';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const router = express.Router();
+const PEPPER = process.env.MY_PEPPER;
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error('環境変数が設定されてません！');
+}
 
-router.post('/signup', async (req, res) => {
+router.post('/signup', async (req, res, next) => {
   try {
     const { loginId, name, iconUrl, password } = req.body.user;
 
@@ -18,18 +25,19 @@ router.post('/signup', async (req, res) => {
     }
 
     // パスワードのハッシュ化
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const pepperPassword = password + PEPPER;
+    const hashedPassword = await bcrypt.hash(pepperPassword, 10);
 
     // ユーザーの作成
     const user = await User.create({
       loginId,
       name,
       iconUrl,
-      authorize_token: hashedPassword, // ハッシュ化されたパスワードを保存
+      authorizeToken: hashedPassword, // ハッシュ化されたパスワードを保存
     });
 
     // JWTトークンの生成
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1d' });
+    const token = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: '1d' });
 
     res.status(201).json({
       user: {
@@ -37,16 +45,15 @@ router.post('/signup', async (req, res) => {
         loginId: user.loginId,
         name: user.name,
         iconUrl: user.iconUrl,
-        authorize_token: token,
       },
+      token: token,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'サーバー内部エラー' });
+    next(error);
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   try {
     const { loginId, password } = req.body;
 
@@ -62,13 +69,14 @@ router.post('/login', async (req, res) => {
     }
 
     // パスワードの検証
-    const isPasswordValid = await bcrypt.compare(password, user.authorize_token);
+    const pepperPassword = password + PEPPER;
+    const isPasswordValid = await bcrypt.compare(pepperPassword, user.authorizeToken);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'パスワードの認証に失敗しました！' });
     }
 
     // JWTトークンの生成
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1d' });
+    const token = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: '1d' });
 
     res.json({
       user: {
@@ -76,12 +84,11 @@ router.post('/login', async (req, res) => {
         loginId: user.loginId,
         name: user.name,
         iconUrl: user.iconUrl,
-        authorize_token: token,
       },
+      token: token,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'サーバー内部エラー' });
+    next(error);
   }
 });
 

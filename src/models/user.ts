@@ -26,11 +26,10 @@ export default class User extends Model<InferAttributes<User>, InferCreationAttr
     allowNull: false,
     validate: {
       notEmpty: true,
-      isAlphanumeric: true,
       len: [1, 255],
     },
   })
-  declare authorize_token: string;
+  declare authorizeToken: string;
 
   @Column({
     type: DataType.STRING,
@@ -45,6 +44,7 @@ export default class User extends Model<InferAttributes<User>, InferCreationAttr
     allowNull: false,
     validate: {
       notEmpty: true,
+      isUrl: true,
     },
   })
   declare iconUrl: string;

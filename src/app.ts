@@ -18,6 +18,18 @@ app.get('/', (req, res) => {
   res.json({ message: 'ok' });
 });
 
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(err.stack);
+
+  if (err.name === 'SequelizeValidationError') {
+    return res.status(400).json({ error: '入力で正しくない項目があるみたい！', details: err.message });
+  }
+  if (err.name === 'UnauthorizedError') {
+    return res.status(401).json({ error: '認証エラーが発生！' });
+  }
+  res.status(500).json({ error: 'サーバー内部エラー！' });
+});
+
 const listenDB = async () => {
   try {
     await sequelize.authenticate();
