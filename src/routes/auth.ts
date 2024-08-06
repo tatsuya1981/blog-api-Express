@@ -33,7 +33,7 @@ router.post('/signup', async (req, res) => {
       loginId,
       name,
       iconUrl,
-      authorize_token: hashedPassword, // ハッシュ化されたパスワードを保存
+      authorizeToken: hashedPassword, // ハッシュ化されたパスワードを保存
     });
 
     // JWTトークンの生成
@@ -45,8 +45,8 @@ router.post('/signup', async (req, res) => {
         loginId: user.loginId,
         name: user.name,
         iconUrl: user.iconUrl,
-        authorize_token: token,
       },
+      token: token,
     });
   } catch (error) {
     console.error(error);
@@ -71,7 +71,7 @@ router.post('/login', async (req, res) => {
 
     // パスワードの検証
     const pepperPassword = password + PEPPER;
-    const isPasswordValid = await bcrypt.compare(pepperPassword, user.authorize_token);
+    const isPasswordValid = await bcrypt.compare(pepperPassword, user.authorizeToken);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'パスワードの認証に失敗しました！' });
     }
@@ -85,8 +85,8 @@ router.post('/login', async (req, res) => {
         loginId: user.loginId,
         name: user.name,
         iconUrl: user.iconUrl,
-        authorize_token: token,
       },
+      token: token,
     });
   } catch (error) {
     console.error(error);

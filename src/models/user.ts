@@ -29,7 +29,7 @@ export default class User extends Model<InferAttributes<User>, InferCreationAttr
       len: [1, 255],
     },
   })
-  declare authorize_token: string;
+  declare authorizeToken: string;
 
   @Column({
     type: DataType.STRING,
