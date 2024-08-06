@@ -14,7 +14,7 @@ if (!jwtSecret) {
   throw new Error('環境変数が設定されてません！');
 }
 
-router.post('/signup', async (req, res) => {
+router.post('/signup', async (req, res, next) => {
   try {
     const { loginId, name, iconUrl, password } = req.body.user;
 
@@ -49,12 +49,11 @@ router.post('/signup', async (req, res) => {
       token: token,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'サーバー内部エラー' });
+    next(error);
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   try {
     const { loginId, password } = req.body;
 
@@ -89,8 +88,7 @@ router.post('/login', async (req, res) => {
       token: token,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'サーバー内部エラー' });
+    next(error);
   }
 });
 
