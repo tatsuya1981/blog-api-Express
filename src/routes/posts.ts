@@ -2,6 +2,9 @@ import express from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import Post from '../models/post';
 import Category from '../models/category';
+import User from '../models/user';
+import { Transaction } from 'sequelize';
+import sequelize from '../config/database';
 
 const router = express.Router();
 
@@ -11,8 +14,18 @@ router.get('/', authMiddleware, async (req: AuthRequest, res) => {
     const where = status !== undefined ? { status } : {};
     const posts = await Post.findAll({
       where,
-      include: [{ model: Category, through: { attributes: [] } }],
+      include: [
+        { model: Category, through: { attributes: [] } },
+        { model: User, attributes: ['id', 'loginId', 'name', 'iconUrl'] },
+      ],
     });
+
+    posts.forEach((post) => {
+      if (post.user && 'authorizeToken' in post.user) {
+        console.warn('Warning: authorizeToken is unexpectedly included in user data');
+      }
+    });
+
     res.json({ posts });
   } catch (error) {
     res.status(500).json({ error: '投稿記事の一覧が取得できないよ！' });
@@ -34,23 +47,35 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
 });
 
 router.post('/', authMiddleware, async (req: AuthRequest, res) => {
+  let transaction: Transaction | null = null;
   try {
+    transaction = await sequelize.transaction();
     const { title, body, status, categoryIds } = req.body.post;
 
-    const post = await Post.create({
-      title,
-      body,
-      status,
-      userId: req.user?.id,
-    });
+    if (!req.user?.id) {
+      return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
+    }
+    const post = await Post.create(
+      {
+        title,
+        body,
+        status,
+        userId: req.user?.id,
+      },
+      { transaction },
+    );
     if (categoryIds && categoryIds.length > 0) {
-      await (post as any).setCategories(categoryIds);
+      await (post as any).setCategories(categoryIds, { transaction });
     }
     const postWithCategories = await Post.findByPk(post.id, {
       include: [{ model: Category, through: { attributes: [] } }],
+      transaction,
     });
+    await transaction.commit();
+
     res.status(201).json({ post: postWithCategories });
   } catch (error) {
+    if (transaction) await transaction.rollback();
     res.status(500).json({ error: '記事の作成に失敗・・・' });
   }
 });
