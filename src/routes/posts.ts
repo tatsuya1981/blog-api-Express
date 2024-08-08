@@ -50,9 +50,11 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   let transaction: Transaction | null = null;
   try {
     transaction = await sequelize.transaction();
+
     const { title, body, status, categoryIds } = req.body.post;
 
     if (!req.user?.id) {
+      await transaction.rollback();
       return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
     }
     const post = await Post.create(
@@ -73,7 +75,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
     });
     await transaction.commit();
 
-    res.status(201).json({ post: postWithCategories });
+    res.status(201).json({});
   } catch (error) {
     if (transaction) await transaction.rollback();
     res.status(500).json({ error: '記事の作成に失敗・・・' });
@@ -81,22 +83,34 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
 });
 
 router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
+  let transaction: Transaction | null = null;
   try {
-    const post = await Post.findByPk(req.params.id);
+    transaction = await sequelize.transaction();
+
+    const post = await Post.findByPk(req.params.id, { transaction });
 
     if (!post) {
+      await transaction.rollback();
       return res.status(404).json({ error: '探している記事は無さそうだよ！' });
     }
     if (post.userId !== req.user?.id) {
+      await transaction.rollback();
       return res.status(403).json({ error: '操作する権限がないよ！！' });
     }
     const { title, body, status, categoryIds } = req.body.post;
-    await post.update({ title, body, status });
+    await post.update({ title, body, status }, { transaction });
     if (categoryIds) {
-      await post.$set('categories', categoryIds);
+      await post.$set('categories', categoryIds, { transaction });
     }
+    await transaction.commit();
+
+    const updatedPost = await Post.findByPk(post.id, {
+      include: [{ model: Category, through: { attributes: [] } }],
+    });
+
     res.json({ post });
   } catch (error) {
+    if (transaction) await transaction.rollback();
     res.status(500).json({ error: '記事の更新に失敗・・・' });
   }
 });
@@ -111,7 +125,7 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
       return res.status(403).json({ error: '操作する権限がないよ！！' });
     }
     await post.destroy();
-    res.status(200).send(`記事が正常に削除されました！  ※※ 削除された記事ＩＤ：${post.id} ※※`);
+    res.status(200).json({ delete: `記事が正常に削除されました！  ※※ 削除された記事ＩＤ：${post.id} ※※` });
   } catch (error) {
     res.status(500).json({ error: '記事の削除に失敗・・・' });
   }
