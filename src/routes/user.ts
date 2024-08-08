@@ -22,9 +22,11 @@ router.get('/', authMiddleware, (req: AuthRequest, res) => {
 
 router.get('/posts', authMiddleware, async (req: AuthRequest, res) => {
   try {
+    if (!req.user?.id) {
+      return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
+    }
     const status = req.query.status ? Number(req.query.status) : undefined;
-    const where =
-      status !== undefined ? { userId: req.user?.id, status } : { userId: req.user?.id };
+    const where = status !== undefined ? { userId: req.user.id, status } : { userId: req.user?.id };
 
     const posts = await Post.findAll({
       where,
