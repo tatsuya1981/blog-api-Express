@@ -4,9 +4,20 @@ import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import postsRoutes from './routes/posts';
 import cors from 'cors';
+import { getJwt } from './middleware/auth';
 
 const app = express();
 const port = 3000;
+
+(() => {
+  try {
+    getJwt();
+    console.log('JWT_SECRETの認証に成功!');
+  } catch (error) {
+    console.error('JWT_SECRETの認証に失敗しました!:', error);
+    process.exit(1);
+  }
+})();
 
 app.use(cors());
 app.use(express.json());

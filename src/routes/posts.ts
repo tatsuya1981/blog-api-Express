@@ -8,7 +8,7 @@ import sequelize from '../config/database';
 
 const router = express.Router();
 
-router.get('/', authMiddleware, async (req: AuthRequest, res) => {
+router.get('/', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const status = req.query.status ? Number(req.query.status) : undefined;
     const where = status !== undefined ? { status } : {};
@@ -20,19 +20,13 @@ router.get('/', authMiddleware, async (req: AuthRequest, res) => {
       ],
     });
 
-    posts.forEach((post) => {
-      if (post.user && 'authorizeToken' in post.user) {
-        console.warn('Warning: authorizeToken is unexpectedly included in user data');
-      }
-    });
-
     res.json({ posts });
   } catch (error) {
-    res.status(500).json({ error: '投稿記事の一覧が取得できないよ！' });
+    next(error);
   }
 });
 
-router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
+router.get('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const post = await Post.findByPk(req.params.id, {
       include: [{ model: Category, through: { attributes: [] } }],
@@ -42,11 +36,11 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
     }
     res.json({ post });
   } catch (error) {
-    res.status(500).json({ error: '記事の詳細を入手できませんでした！' });
+    next(error);
   }
 });
 
-router.post('/', authMiddleware, async (req: AuthRequest, res) => {
+router.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
   let transaction: Transaction | null = null;
   try {
     transaction = await sequelize.transaction();
@@ -78,11 +72,11 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
     res.status(201).json({});
   } catch (error) {
     if (transaction) await transaction.rollback();
-    res.status(500).json({ error: '記事の作成に失敗・・・' });
+    next(error);
   }
 });
 
-router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
+router.patch('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
   let transaction: Transaction | null = null;
   try {
     transaction = await sequelize.transaction();
@@ -111,11 +105,11 @@ router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
     res.json({ post });
   } catch (error) {
     if (transaction) await transaction.rollback();
-    res.status(500).json({ error: '記事の更新に失敗・・・' });
+    next(error);
   }
 });
 
-router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
+router.delete('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const post = await Post.findByPk(req.params.id);
     if (!post) {
@@ -127,7 +121,7 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
     await post.destroy();
     res.status(200).json({ delete: `記事が正常に削除されました！  ※※ 削除された記事ＩＤ：${post.id} ※※` });
   } catch (error) {
-    res.status(500).json({ error: '記事の削除に失敗・・・' });
+    next(error);
   }
 });
 
