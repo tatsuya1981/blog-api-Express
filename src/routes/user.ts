@@ -20,7 +20,7 @@ router.get('/', authMiddleware, (req: AuthRequest, res) => {
   });
 });
 
-router.get('/posts', authMiddleware, async (req: AuthRequest, res) => {
+router.get('/posts', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     if (!req.user?.id) {
       return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
@@ -35,7 +35,7 @@ router.get('/posts', authMiddleware, async (req: AuthRequest, res) => {
 
     res.json({ posts });
   } catch (error) {
-    res.status(500).json({ error: '投稿の取得に失敗しました' });
+    next(error);
   }
 });
 

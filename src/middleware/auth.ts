@@ -6,7 +6,7 @@ export interface AuthRequest extends Request {
   user?: User;
 }
 
-const getJwt = (): string => {
+export const getJwt = (): string => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error('環境変数にJWT_SECRETが設定されていません');
@@ -17,11 +17,11 @@ const getJwt = (): string => {
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.header('Authorization');
   if (!authHeader) {
-    return res.status(401).json({ error: '認証のヘッダーが無いよ！' });
+    return res.status(401).json({ error: '認証が必要です！' });
   }
   const token = authHeader.replace('Bearer ', '');
   if (!token) {
-    return res.status(401).json({ error: 'トークンが無いみたいだよ〜！' });
+    return res.status(401).json({ error: '有効な認証トークンが必要です！' });
   }
   try {
     const JwtSecret = getJwt();
