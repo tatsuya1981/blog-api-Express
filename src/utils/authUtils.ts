@@ -4,12 +4,8 @@ import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
-const PEPPER = process.env.MY_PEPPER;
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET 環境変数が設定されてません');
-}
+const PEPPER = process.env.MY_PEPPER!;
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 export const hashPassword = async (password: string): Promise<string> => {
   const pepperPassword = password + PEPPER;

@@ -3,8 +3,6 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 import Post from '../models/post';
 import Category from '../models/category';
 import User from '../models/user';
-import { Transaction } from 'sequelize';
-import sequelize from '../config/database';
 
 const router = express.Router();
 
@@ -41,70 +39,31 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
 });
 
 router.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
-  let transaction: Transaction | null = null;
   try {
-    transaction = await sequelize.transaction();
-
-    const { title, body, status, categoryIds } = req.body.post;
-
     if (!req.user?.id) {
-      await transaction.rollback();
       return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
     }
-    const post = await Post.create(
-      {
-        title,
-        body,
-        status,
-        userId: req.user?.id,
-      },
-      { transaction },
-    );
-    if (categoryIds && categoryIds.length > 0) {
-      await (post as any).setCategories(categoryIds, { transaction });
-    }
-    const postWithCategories = await Post.findByPk(post.id, {
-      include: [{ model: Category, through: { attributes: [] } }],
-      transaction,
+    const postWithCategories = await Post.createCategories({
+      ...req.body.post,
+      userId: req.user?.id,
     });
-    await transaction.commit();
 
-    res.status(201).json({});
+    res.status(201).json(postWithCategories);
   } catch (error) {
-    if (transaction) await transaction.rollback();
     next(error);
   }
 });
 
 router.patch('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
-  let transaction: Transaction | null = null;
   try {
-    transaction = await sequelize.transaction();
-
-    const post = await Post.findByPk(req.params.id, { transaction });
-
-    if (!post) {
-      await transaction.rollback();
-      return res.status(404).json({ error: '探している記事は無さそうだよ！' });
+    if (!req.user?.id) {
+      return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
     }
-    if (post.userId !== req.user?.id) {
-      await transaction.rollback();
-      return res.status(403).json({ error: '操作する権限がないよ！！' });
-    }
-    const { title, body, status, categoryIds } = req.body.post;
-    await post.update({ title, body, status }, { transaction });
-    if (categoryIds) {
-      await post.$set('categories', categoryIds, { transaction });
-    }
-    await transaction.commit();
 
-    const updatedPost = await Post.findByPk(post.id, {
-      include: [{ model: Category, through: { attributes: [] } }],
-    });
+    const updatedPost = await Post.updateWithCategories(Number(req.params.id), req.user.id, req.body.post);
 
-    res.json({ post });
+    res.json({ post: updatedPost });
   } catch (error) {
-    if (transaction) await transaction.rollback();
     next(error);
   }
 });
