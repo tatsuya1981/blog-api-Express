@@ -5,9 +5,20 @@ import userRoutes from './routes/user';
 import postsRoutes from './routes/posts';
 import cors from 'cors';
 import { getJwt } from './middleware/auth';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 const port = 3000;
+
+const requiredEnv = ['JWT_SECRET', 'MY_PEPPER'];
+
+for (const env of requiredEnv) {
+  if (!process.env[env]) {
+    throw new Error(`${env} 環境変数が設定されてません！`);
+  }
+}
 
 (() => {
   try {
