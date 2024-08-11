@@ -4,31 +4,13 @@ import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import postsRoutes from './routes/posts';
 import cors from 'cors';
-import { getJwt } from './middleware/auth';
+import { checkAllEnv } from './middleware/auth';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const app = express();
 const port = 3000;
-
-const requiredEnv = ['JWT_SECRET', 'MY_PEPPER'];
-
-for (const env of requiredEnv) {
-  if (!process.env[env]) {
-    throw new Error(`${env} 環境変数が設定されてません！`);
-  }
-}
-
-(() => {
-  try {
-    getJwt();
-    console.log('JWT_SECRETの認証に成功!');
-  } catch (error) {
-    console.error('JWT_SECRETの認証に失敗しました!:', error);
-    process.exit(1);
-  }
-})();
 
 app.use(cors());
 app.use(express.json());
@@ -39,6 +21,16 @@ app.use('/posts', postsRoutes);
 app.get('/', (req, res) => {
   res.json({ message: 'ok' });
 });
+
+const envCheck = async () => {
+  try {
+    await checkAllEnv();
+  } catch (error) {
+    console.error('環境変数のエラー！', error);
+    process.exit(1);
+  }
+};
+envCheck();
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
@@ -61,7 +53,7 @@ const listenDB = async () => {
     });
   } catch {
     (error: unknown) => {
-      console.error('Unable to connect to the database:', error);
+      console.error('データベースの接続に失敗しました！:', error);
     };
   }
 };

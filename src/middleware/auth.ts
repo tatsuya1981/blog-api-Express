@@ -6,12 +6,20 @@ export interface AuthRequest extends Request {
   user?: User;
 }
 
-export const getJwt = (): string => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error('環境変数にJWT_SECRETが設定されていません');
+const requiredEnv = ['JWT_SECRET', 'MY_PEPPER'];
+
+export const getEnv = (envName: string): string => {
+  const value = process.env[envName];
+  if (!value) {
+    throw new Error(`環境変数${envName}が設定されていません！`);
   }
-  return secret;
+  return value;
+};
+
+export const checkAllEnv = (): void => {
+  for (const env of requiredEnv) {
+    getEnv(env);
+  }
 };
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -24,8 +32,8 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     return res.status(401).json({ error: '有効な認証トークンが必要です！' });
   }
   try {
-    const JwtSecret = getJwt();
-    const decoded = jwt.verify(token, JwtSecret) as {
+    const jwtSecret = getEnv('JWT_SECRET');
+    const decoded = jwt.verify(token, jwtSecret) as {
       userId: number;
     };
     const user = await User.findByPk(decoded.userId);
