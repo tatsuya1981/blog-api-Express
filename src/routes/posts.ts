@@ -38,7 +38,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
   if (!req.user?.id) {
     return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
   }
-  const postWithCategories = await Post.createCategories({
+  const postWithCategories = await Post.createPost({
     ...req.body.post,
     userId: req.user?.id,
   });
