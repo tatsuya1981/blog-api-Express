@@ -21,22 +21,18 @@ router.get('/', authMiddleware, (req: AuthRequest, res) => {
 });
 
 router.get('/posts', authMiddleware, async (req: AuthRequest, res, next) => {
-  try {
-    if (!req.user?.id) {
-      return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
-    }
-    const status = req.query.status ? Number(req.query.status) : undefined;
-    const where = status !== undefined ? { userId: req.user.id, status } : { userId: req.user?.id };
-
-    const posts = await Post.findAll({
-      where,
-      include: [{ model: Category, through: { attributes: [] } }],
-    });
-
-    res.json({ posts });
-  } catch (error) {
-    next(error);
+  if (!req.user?.id) {
+    return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
   }
+  const status = req.query.status ? Number(req.query.status) : undefined;
+  const where = status !== undefined ? { userId: req.user.id, status } : { userId: req.user?.id };
+
+  const posts = await Post.findAll({
+    where,
+    include: [{ model: Category, through: { attributes: [] } }],
+  });
+
+  res.json({ posts });
 });
 
 export default router;

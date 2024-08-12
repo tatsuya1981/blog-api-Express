@@ -25,63 +25,47 @@ router.get('/', authMiddleware, async (req: AuthRequest, res, next) => {
 });
 
 router.get('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
-  try {
-    const post = await Post.findByPk(req.params.id, {
-      include: [{ model: Category, through: { attributes: [] } }],
-    });
-    if (!post) {
-      return res.status(404).json({ error: '記事が見つからないよ！' });
-    }
-    res.json({ post });
-  } catch (error) {
-    next(error);
+  const post = await Post.findByPk(req.params.id, {
+    include: [{ model: Category, through: { attributes: [] } }],
+  });
+  if (!post) {
+    return res.status(404).json({ error: '記事が見つからないよ！' });
   }
+  res.json({ post });
 });
 
 router.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
-  try {
-    if (!req.user?.id) {
-      return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
-    }
-    const postWithCategories = await Post.createCategories({
-      ...req.body.post,
-      userId: req.user?.id,
-    });
-
-    res.status(201).json(postWithCategories);
-  } catch (error) {
-    next(error);
+  if (!req.user?.id) {
+    return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
   }
+  const postWithCategories = await Post.createCategories({
+    ...req.body.post,
+    userId: req.user?.id,
+  });
+
+  res.status(201).json(postWithCategories);
 });
 
 router.patch('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
-  try {
-    if (!req.user?.id) {
-      return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
-    }
-
-    const updatedPost = await Post.updateWithCategories(Number(req.params.id), req.user.id, req.body.post);
-
-    res.json({ post: updatedPost });
-  } catch (error) {
-    next(error);
+  if (!req.user?.id) {
+    return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
   }
+
+  const updatedPost = await Post.updateWithCategories(Number(req.params.id), req.user.id, req.body.post);
+
+  res.json({ post: updatedPost });
 });
 
 router.delete('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
-  try {
-    const post = await Post.findByPk(req.params.id);
-    if (!post) {
-      return res.status(404).json({ error: '記事が見つからないよ！' });
-    }
-    if (post.userId !== req.user?.id) {
-      return res.status(403).json({ error: '操作する権限がないよ！！' });
-    }
-    await post.destroy();
-    res.status(200).json({ delete: `記事が正常に削除されました！  ※※ 削除された記事ＩＤ：${post.id} ※※` });
-  } catch (error) {
-    next(error);
+  const post = await Post.findByPk(req.params.id);
+  if (!post) {
+    return res.status(404).json({ error: '記事が見つからないよ！' });
   }
+  if (post.userId !== req.user?.id) {
+    return res.status(403).json({ error: '操作する権限がないよ！！' });
+  }
+  await post.destroy();
+  res.status(200).json({ delete: `記事が正常に削除されました！  ※※ 削除された記事ＩＤ：${post.id} ※※` });
 });
 
 export default router;
