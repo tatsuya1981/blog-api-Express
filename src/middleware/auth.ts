@@ -1,26 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/user';
+import { getEnv } from '../config/envValidation';
 
 export interface AuthRequest extends Request {
   user?: User;
 }
-
-const requiredEnv = ['JWT_SECRET', 'MY_PEPPER'];
-
-export const getEnv = (envName: string): string => {
-  const value = process.env[envName];
-  if (!value) {
-    throw new Error(`環境変数${envName}が設定されていません！`);
-  }
-  return value;
-};
-
-export const checkAllEnv = (): void => {
-  for (const env of requiredEnv) {
-    getEnv(env);
-  }
-};
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.header('Authorization');

@@ -4,8 +4,8 @@ import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import postsRoutes from './routes/posts';
 import cors from 'cors';
-import { checkAllEnv } from './middleware/auth';
 import dotenv from 'dotenv';
+import { checkAllEnv } from './config/envValidation';
 
 dotenv.config();
 
@@ -23,12 +23,7 @@ app.get('/', (req, res) => {
 });
 
 const envCheck = async () => {
-  try {
-    await checkAllEnv();
-  } catch (error) {
-    console.error('環境変数のエラー！', error);
-    process.exit(1);
-  }
+  await checkAllEnv();
 };
 envCheck();
 
