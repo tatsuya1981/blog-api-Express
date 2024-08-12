@@ -61,38 +61,45 @@ export default class Post extends Model {
   @BelongsToMany(() => Category, () => PostCategory)
   declare categories: Category[];
 
-  static async createCategories(
-    data: {
-      title: string;
-      body: string;
-      status: number;
-      userId: number;
-      categoryIds?: number[];
-    },
-    transaction?: Transaction,
-  ) {
+  static createPost = async (data: {
+    title: string;
+    body: string;
+    status: number;
+    userId: number;
+    categoryIds?: number[];
+  }) => {
     const { title, body, status, userId, categoryIds } = data;
+    const post = await Post.create({ title, body, status, userId, categoryIds });
+    if (categoryIds && categoryIds.length > 0) {
+      await post.$set('categories', categoryIds);
+    }
+    return post;
+  };
 
-    return sequelize.transaction(async (t: Transaction) => {
-      const tx = transaction || t;
-      const post = await Post.create({ title, body, status, userId, categoryIds }, { transaction: tx });
-      if (categoryIds && categoryIds.length > 0) {
-        await post.$set('categories', categoryIds, { transaction: tx });
-      }
-      const postWithCategories = await Post.findByPk(post.id, {
-        include: [
-          {
-            model: Category,
-            through: { attributes: [] },
-          },
-        ],
-        transaction: tx,
-      });
-      return postWithCategories;
+  static postWithCategories = async (postId: number) => {
+    return Post.findByPk(postId, {
+      include: [
+        {
+          model: Category,
+          through: { attributes: [] },
+        },
+      ],
     });
-  }
+  };
 
-  static async updateWithCategories(
+  static validatePost = async (id: number, userId: number) => {
+    const post = await Post.findByPk(id);
+
+    if (!post) {
+      throw new Error('記事は見つかりませんでした！');
+    }
+    if (post.userId !== userId) {
+      throw new Error('操作する権限がありません！');
+    }
+    return post;
+  };
+
+  static updateWithCategories = async (
     id: number,
     userId: number,
     data: {
@@ -101,31 +108,20 @@ export default class Post extends Model {
       status: number;
       categoryIds?: number[];
     },
-    transaction?: Transaction,
-  ) {
-    return sequelize.transaction(async (t: Transaction) => {
-      const tx = transaction || t;
-      const post = await Post.findByPk(id, { transaction: tx });
+  ) => {
+    const post = await Post.validatePost(id, userId);
+    const { title, body, status, categoryIds } = data;
+    await post.update({ title, body, status });
 
-      if (!post) {
-        throw new Error('記事は見つかりませんでした！');
-      }
-      if (post.userId !== userId) {
-        throw new Error('操作する権限がありません！');
-      }
+    if (categoryIds) {
+      await post.$set('categories', categoryIds);
+    }
+    return Post.updatePostWithCategories;
+  };
 
-      const { title, body, status, categoryIds } = data;
-      await post.update({ title, body, status }, { transaction: tx });
-
-      if (categoryIds) {
-        await post.$set('categories', categoryIds, { transaction: tx });
-      }
-
-      const updatedPost = await Post.findByPk(post.id, {
-        include: [{ model: Category, through: { attributes: [] } }],
-        transaction: tx,
-      });
-      return updatedPost;
+  static updatePostWithCategories = async (id: number) => {
+    return await Post.findByPk(id, {
+      include: [{ model: Category, through: { attributes: [] } }],
     });
-  }
+  };
 }
