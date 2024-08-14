@@ -22,10 +22,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'ok' });
 });
 
-const envCheck = async () => {
-  await checkAllEnv();
-};
-envCheck();
+checkAllEnv();
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
@@ -40,16 +37,15 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 const listenDB = async () => {
+  await sequelize.authenticate();
+  console.log('データベースの接続に成功！！');
   try {
-    await sequelize.authenticate();
-    console.log('データベースの接続に成功したよ！！');
     app.listen(port, () => {
       console.log(`サーバーはhttp://localhost:${port}で起動中！`);
     });
-  } catch {
-    (error: unknown) => {
-      console.error('データベースの接続に失敗しました！:', error);
-    };
+  } catch (error: unknown) {
+    console.error('サーバーの起動に失敗しました！:', error);
+    return process.exit(1);
   }
 };
 

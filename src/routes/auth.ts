@@ -6,44 +6,40 @@ import { comparePassword, generateToken, hashPassword } from '../utils/authUtils
 const router = express.Router();
 
 router.post('/signup', async (req, res, next) => {
-  try {
-    const { loginId, name, iconUrl, password } = req.body.user;
+  const { loginId, name, iconUrl, password } = req.body.user;
 
-    // 既存ユーザーのチェック
-    const existingUser = await User.findOne({ where: { loginId } });
-    if (existingUser) {
-      return res.status(400).json({ error: 'ユーザーが既に存在します' });
-    }
-
-    // パスワードのハッシュ化
-    const hashedPassword = await hashPassword(password);
-
-    // ユーザーの作成
-    const user = await User.create({
-      loginId,
-      name,
-      iconUrl,
-      authorizeToken: hashedPassword, // ハッシュ化されたパスワードを保存
-    });
-
-    // JWTトークンの生成
-    if (!user.id) {
-      return res.status(400).json({ error: 'ユーザーＩＤがありません！' });
-    }
-    const token = generateToken(user.id);
-
-    res.status(201).json({
-      user: {
-        id: user.id,
-        loginId: user.loginId,
-        name: user.name,
-        iconUrl: user.iconUrl,
-      },
-      token: token,
-    });
-  } catch (error) {
-    next(error);
+  // 既存ユーザーのチェック
+  const existingUser = await User.findOne({ where: { loginId } });
+  if (existingUser) {
+    return res.status(400).json({ error: 'ユーザーが既に存在します' });
   }
+
+  // パスワードのハッシュ化
+  const hashedPassword = await hashPassword(password);
+
+  // ユーザーの作成
+  const user = await User.create({
+    loginId,
+    name,
+    iconUrl,
+    authorizeToken: hashedPassword, // ハッシュ化されたパスワードを保存
+  });
+
+  // JWTトークンの生成
+  if (!user.id) {
+    return res.status(400).json({ error: 'ユーザーＩＤがありません！' });
+  }
+  const token = generateToken(user.id);
+
+  res.status(201).json({
+    user: {
+      id: user.id,
+      loginId: user.loginId,
+      name: user.name,
+      iconUrl: user.iconUrl,
+    },
+    token: token,
+  });
 });
 
 router.post('/login', async (req, res, next) => {
