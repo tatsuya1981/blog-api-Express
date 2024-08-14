@@ -61,14 +61,16 @@ export default class Post extends Model {
   @BelongsToMany(() => Category, () => PostCategory)
   declare categories: Category[];
 
-  async post(categoryIds: number[]) {
-    await this.save();
+  async post(categoryIds: number[], transaction: Transaction) {
+    const t = transaction || (await sequelize.transaction());
+    await this.save({ transaction: t });
     if (categoryIds) {
-      await this.$set('categories', categoryIds);
+      await this.$set('categories', categoryIds, { transaction: t });
     }
+    if (!transaction) await t.commit();
   }
 
-  static postWithCategories = async (postId: number) => {
+  static postWithCategories = async (postId: number, transaction?: Transaction) => {
     return await Post.findByPk(postId, {
       include: [
         {
@@ -76,6 +78,7 @@ export default class Post extends Model {
           through: { attributes: [] },
         },
       ],
+      transaction,
     });
   };
 
@@ -88,14 +91,16 @@ export default class Post extends Model {
       status: number;
       categoryIds?: number[];
     },
+    transaction?: Transaction,
   ) => {
-    const post = await Post.findByPk(id);
+    const t = transaction || (await sequelize.transaction());
+    const post = await Post.findByPk(id, { transaction: t });
     const { title, body, status, categoryIds } = data;
-    await post?.update({ title, body, status });
+    await post?.update({ title, body, status }, { transaction: t });
 
     if (categoryIds) {
-      await post?.$set('categories', categoryIds);
+      await post?.$set('categories', categoryIds, { transaction: t });
     }
-    return Post.postWithCategories;
+    return await Post.postWithCategories(id, t);
   };
 }
