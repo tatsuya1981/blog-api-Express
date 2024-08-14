@@ -22,10 +22,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'ok' });
 });
 
-const envCheck = async () => {
-  await checkAllEnv();
-};
-envCheck();
+checkAllEnv();
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);

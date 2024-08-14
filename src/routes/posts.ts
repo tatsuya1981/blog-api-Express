@@ -38,17 +38,27 @@ router.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
   if (!req.user?.id) {
     return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
   }
-  const postWithCategories = await Post.createPost({
+  const post = await Post.build({
     ...req.body.post,
     userId: req.user?.id,
   });
-
-  res.status(201).json(postWithCategories);
+  await post.save();
+  res.status(201).json(post);
 });
 
 router.patch('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
+  const postUser = await Post.findByPk(req.params.id);
+
   if (!req.user?.id) {
     return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
+  }
+
+  if (!req.params.id) {
+    return res.status(404).json({ error: '記事は見つかりませんでした！' });
+  }
+
+  if (!postUser || postUser.id !== req.user.id) {
+    return res.status(403).json({ error: '操作する権限がありません！' });
   }
 
   const updatedPost = await Post.updateWithCategories(Number(req.params.id), req.user.id, req.body.post);
