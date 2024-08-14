@@ -24,17 +24,15 @@ router.get('/', authMiddleware, async (req: AuthRequest, res, next) => {
   }
 });
 
-router.get('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
-  const post = await Post.findByPk(req.params.id, {
-    include: [{ model: Category, through: { attributes: [] } }],
-  });
+router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
+  const post = await Post.postWithCategories(Number(req.params.id));
   if (!post) {
     return res.status(404).json({ error: '記事が見つからないよ！' });
   }
   res.json({ post });
 });
 
-router.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
+router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   if (!req.user?.id) {
     return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
   }
@@ -46,19 +44,19 @@ router.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
   res.status(201).json(post);
 });
 
-router.patch('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
+router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
   const postUser = await Post.findByPk(req.params.id);
 
   if (!req.user?.id) {
     return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
   }
 
-  if (!req.params.id) {
-    return res.status(404).json({ error: '記事は見つかりませんでした！' });
-  }
-
   if (!postUser || postUser.id !== req.user.id) {
     return res.status(403).json({ error: '操作する権限がありません！' });
+  }
+
+  if (!req.params.id) {
+    return res.status(404).json({ error: '記事は見つかりませんでした！' });
   }
 
   const updatedPost = await Post.updateWithCategories(Number(req.params.id), req.user.id, req.body.post);
@@ -66,8 +64,8 @@ router.patch('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
   res.json({ post: updatedPost });
 });
 
-router.delete('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
-  const post = await Post.findByPk(req.params.id);
+router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
+  const post = await Post.postWithCategories(Number(req.params.id));
   if (!post) {
     return res.status(404).json({ error: '記事が見つからないよ！' });
   }
