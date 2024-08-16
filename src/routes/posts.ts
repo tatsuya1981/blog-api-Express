@@ -73,7 +73,7 @@ router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
   }
 
   await Post.updateWithCategories(Number(req.params.id), req.user.id, req.body.post, t);
-  const updatedPost = await Post.postWithCategories(Number(req.params.id));
+  const updatedPost = await Post.postWithCategories(Number(req.params.id), t);
   await t.commit();
 
   res.json({ post: updatedPost });
