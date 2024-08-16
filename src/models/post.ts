@@ -82,9 +82,7 @@ export default class Post extends Model {
     });
   };
 
-  static updateWithCategories = async (
-    id: number,
-    userId: number,
+  async updateWithCategories(
     data: {
       title: string;
       body: string;
@@ -92,14 +90,11 @@ export default class Post extends Model {
       categoryIds?: number[];
     },
     transaction?: Transaction,
-  ) => {
+  ) {
     const t = transaction || (await sequelize.transaction());
-    const post = await Post.findByPk(id, { transaction: t });
-    const { title, body, status, categoryIds } = data;
-    await post?.update({ title, body, status }, { transaction: t });
-
-    if (categoryIds) {
-      await post?.$set('categories', categoryIds, { transaction: t });
+    await this.update({ title: data.title, body: data.body, status: data.status }, { transaction: t });
+    if (data.categoryIds) {
+      await this.$set('categories', data.categoryIds, { transaction: t });
     }
-  };
+  }
 }

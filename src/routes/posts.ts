@@ -4,7 +4,6 @@ import Post from '../models/post';
 import Category from '../models/category';
 import User from '../models/user';
 import sequelize from '../config/database';
-import { error } from 'console';
 
 const router = express.Router();
 
@@ -39,44 +38,47 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
     return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
   }
   const { categoryIds, ...postData } = req.body.post;
-  const transaction = await sequelize.transaction();
+  const t = await sequelize.transaction();
   try {
     const post = Post.build({
       ...postData,
       userId: req.user?.id,
     });
-    await post.post(categoryIds, transaction);
-    await transaction.commit();
+    await post.post(categoryIds, t);
+    await t.commit();
     res.status(201).json(post);
   } catch {
-    await transaction.rollback();
+    await t.rollback();
     res.status(500).json({ error: '投稿の作成に失敗しました' });
   }
 });
 
 router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
-  const t = await sequelize.transaction();
   if (!req.user?.id) {
     return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
   }
   if (!req.params.id) {
     return res.status(404).json({ error: '記事は見つかりませんでした！' });
   }
-  const postUser = await Post.postWithCategories(Number(req.params.id));
+  const postSearch = await Post.postWithCategories(Number(req.params.id));
 
-  if (!postUser) {
+  if (!postSearch) {
     return res.status(404).json({ error: '記事は見つかりませんでした！' });
   }
 
-  if (postUser.userId !== req.user.id) {
+  if (postSearch.userId !== req.user.id) {
     return res.status(403).json({ error: '操作する権限がありません！' });
   }
 
-  await Post.updateWithCategories(Number(req.params.id), req.user.id, req.body.post, t);
-  const updatedPost = await Post.postWithCategories(Number(req.params.id), t);
-  await t.commit();
-
-  res.json({ post: updatedPost });
+  const t = await sequelize.transaction();
+  try {
+    await postSearch.updateWithCategories(req.body.post, t);
+    await t.commit();
+    res.json({ post: postSearch });
+  } catch {
+    await t.rollback();
+    res.status(500).json({ error: '更新に失敗しました！' });
+  }
 });
 
 router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
