@@ -4,6 +4,7 @@ import Post from '../models/post';
 import Category from '../models/category';
 import User from '../models/user';
 import sequelize from '../config/database';
+import { error } from 'console';
 
 const router = express.Router();
 
@@ -37,12 +38,20 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   if (!req.user?.id) {
     return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
   }
-  const post = await Post.build({
-    ...req.body.post,
-    userId: req.user?.id,
-  });
-  await post.save();
-  res.status(201).json(post);
+  const { categoryIds, ...postData } = req.body.post;
+  const transaction = await sequelize.transaction();
+  try {
+    const post = Post.build({
+      ...postData,
+      userId: req.user?.id,
+    });
+    await post.post(categoryIds, transaction);
+    await transaction.commit();
+    res.status(201).json(post);
+  } catch {
+    await transaction.rollback();
+    res.status(500).json({ error: '投稿の作成に失敗しました' });
+  }
 });
 
 router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
@@ -53,7 +62,7 @@ router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
   if (!req.params.id) {
     return res.status(404).json({ error: '記事は見つかりませんでした！' });
   }
-  const postUser = await Post.postWithCategories(Number(req.params.id), t);
+  const postUser = await Post.postWithCategories(Number(req.params.id));
 
   if (!postUser) {
     return res.status(404).json({ error: '記事は見つかりませんでした！' });
@@ -63,7 +72,8 @@ router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
     return res.status(403).json({ error: '操作する権限がありません！' });
   }
 
-  const updatedPost = await Post.updateWithCategories(Number(req.params.id), req.user.id, req.body.post, t);
+  await Post.updateWithCategories(Number(req.params.id), req.user.id, req.body.post, t);
+  const updatedPost = await Post.postWithCategories(Number(req.params.id));
   await t.commit();
 
   res.json({ post: updatedPost });

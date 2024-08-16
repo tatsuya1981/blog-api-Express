@@ -70,7 +70,7 @@ export default class Post extends Model {
     if (!transaction) await t.commit();
   }
 
-  static postWithCategories = async (postId: number, transaction?: Transaction) => {
+  static postWithCategories = async (postId: number) => {
     return await Post.findByPk(postId, {
       include: [
         {
@@ -78,7 +78,6 @@ export default class Post extends Model {
           through: { attributes: [] },
         },
       ],
-      transaction,
     });
   };
 
@@ -101,6 +100,5 @@ export default class Post extends Model {
     if (categoryIds) {
       await post?.$set('categories', categoryIds, { transaction: t });
     }
-    return await Post.postWithCategories(id, t);
   };
 }
