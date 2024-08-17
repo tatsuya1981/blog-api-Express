@@ -96,5 +96,6 @@ export default class Post extends Model {
     if (data.categoryIds) {
       await this.$set('categories', data.categoryIds, { transaction: t });
     }
+    if (!transaction) await t.commit();
   }
 }
