@@ -38,17 +38,17 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
     return res.status(400).json({ error: 'ユーザーＩＤが見つかりません！' });
   }
   const { categoryIds, ...postData } = req.body.post;
-  const t = await sequelize.transaction();
   try {
-    const post = Post.build({
-      ...postData,
-      userId: req.user?.id,
+    const result = await sequelize.transaction(async (t) => {
+      const post = Post.build({
+        ...postData,
+        userId: req.user?.id,
+      });
+      await post.post(categoryIds, t);
+      return post;
     });
-    await post.post(categoryIds, t);
-    await t.commit();
-    res.status(201).json(post);
+    res.status(201).json(result);
   } catch {
-    await t.rollback();
     res.status(500).json({ error: '投稿の作成に失敗しました' });
   }
 });
@@ -70,13 +70,12 @@ router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
     return res.status(403).json({ error: '操作する権限がありません！' });
   }
 
-  const t = await sequelize.transaction();
   try {
-    await postSearch.updateWithCategories(req.body.post, t);
-    await t.commit();
+    await sequelize.transaction(async (t) => {
+      await postSearch.updateWithCategories(req.body.post, t);
+    });
     res.json({ post: postSearch });
   } catch {
-    await t.rollback();
     res.status(500).json({ error: '更新に失敗しました！' });
   }
 });
