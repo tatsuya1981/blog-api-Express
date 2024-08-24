@@ -17,6 +17,7 @@
     "sequelize": "^6.37.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
+    "sequelize-typescript": "^2.1.6",
     "@types/node": "^22.0.0"
   },
   "devDependencies": {
@@ -29,8 +30,7 @@
     "eslint-config-prettier": "^9.1.0",
     "nodemon": "^3.1.4",
     "prettier": "^3.3.3",
-    "sequelize-cli": "^6.6.2",
-    "sequelize-typescript": "^2.1.6"
+    "sequelize-cli": "^6.6.2"
   },
   "scripts": {
     "start": "node dist/app.js",
